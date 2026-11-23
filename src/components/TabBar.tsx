@@ -82,7 +82,7 @@ export function TabBar({
         </View>
       </View>
 
-      {/* Elevated Center Scan FAB */}
+      {/* Elevated Center Add Transaction FAB */}
       <View
         style={[
           styles.fabContainer,
@@ -96,9 +96,9 @@ export function TabBar({
           style={styles.fab}
           className="bg-brand-500"
           activeOpacity={0.85}
-          onPress={() => router.push('/scan' as any)}
+          onPress={() => router.push('/add-transaction' as any)}
         >
-          <Ionicons name="scan" size={28} color="#FFFFFF" />
+          <Ionicons name="add" size={32} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
     </View>
