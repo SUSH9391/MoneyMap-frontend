@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, Text, ActivityIndicator } from 'react-native';
+import { haptic } from '../../utils/haptics';
 
 interface ButtonProps {
   label: string;
@@ -44,7 +45,10 @@ export function Button({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptic.light();
+        onPress();
+      }}
       disabled={disabled || loading}
       className={`${baseClasses} ${sizeClasses} ${variantClasses} ${
         disabled ? 'opacity-50' : ''

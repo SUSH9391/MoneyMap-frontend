@@ -2,6 +2,7 @@
   "expo": {
     "name": "MoneyMap-frontend",
     "slug": "MoneyMap-frontend",
+    "scheme": "moneymap",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

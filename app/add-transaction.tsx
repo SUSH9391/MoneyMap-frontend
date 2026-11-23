@@ -13,6 +13,7 @@ import { ScreenWrapper } from '../src/components/ui/ScreenWrapper';
 import { Button } from '../src/components/ui/Button';
 import { useCategories } from '../src/hooks/useCategories';
 import { useCreateTransaction } from '../src/hooks/useTransaction';
+import { haptic } from '../src/utils/haptics';
 
 export default function AddTransactionModal() {
   const router = useRouter();
@@ -26,6 +27,15 @@ export default function AddTransactionModal() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
     categories[0]?.id || ''
   );
+
+  const handleTypeChange = (nextType: 'expense' | 'income') => {
+    if (type === nextType) {
+      return;
+    }
+
+    haptic.selection();
+    setType(nextType);
+  };
 
   const handleSave = async () => {
     const parsedAmount = parseFloat(amount);
@@ -47,6 +57,7 @@ export default function AddTransactionModal() {
         date: new Date().toISOString(),
       });
 
+      haptic.success();
       router.back();
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to save transaction');
@@ -72,7 +83,7 @@ export default function AddTransactionModal() {
         {/* Expense / Income Segmented Control */}
         <View className="flex-row p-1 bg-zinc-100 dark:bg-zinc-800 rounded-2xl">
           <TouchableOpacity
-            onPress={() => setType('expense')}
+            onPress={() => handleTypeChange('expense')}
             className={`flex-1 py-3 rounded-xl items-center ${
               type === 'expense' ? 'bg-white dark:bg-zinc-700 shadow-sm' : ''
             }`}
@@ -87,7 +98,7 @@ export default function AddTransactionModal() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => setType('income')}
+            onPress={() => handleTypeChange('income')}
             className={`flex-1 py-3 rounded-xl items-center ${
               type === 'income' ? 'bg-white dark:bg-zinc-700 shadow-sm' : ''
             }`}
