@@ -1,76 +1,50 @@
-
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
 
 import { TabBar } from '@/components/TabBar';
-
-const ICON_COLOR = '#71717A';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
+  const colorScheme = useColorScheme();
+
   return (
     <Tabs
       tabBar={(props) => <TabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#7C6FF7',
-        tabBarInactiveTintColor: ICON_COLOR,
-      }}
-    >
+        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+      }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="home-outline"
-              size={size}
-              color={color ?? ICON_COLOR}
-            />
-          ),
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
-
       <Tabs.Screen
         name="transactions"
         options={{
           title: 'Transactions',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="receipt-outline"
-              size={size}
-              color={color ?? ICON_COLOR}
-            />
-          ),
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
       />
-
       <Tabs.Screen
         name="budget"
         options={{
           title: 'Budget',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="pie-chart-outline"
-              size={size}
-              color={color ?? ICON_COLOR}
-            />
-          ),
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
         }}
       />
-
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons
-              name="settings-outline"
-              size={size}
-              color={color ?? ICON_COLOR}
-            />
-          ),
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />,
         }}
       />
+
     </Tabs>
   );
 }

@@ -1,189 +1,100 @@
-
-// src/store/authStore.ts
-
 import { create } from 'zustand';
-import {
-  createJSONStorage,
-  persist,
-} from 'zustand/middleware';
-
-import type { StateStorage } from 'zustand/middleware';
+import { createJSONStorage, persist, StateStorage } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
-
-import type { User } from '@/types/auth';
-
-// ---------------------------------------------
-// 1. Types
-// ---------------------------------------------
+import { User } from '../api/endpoints/auth';
 
 interface AuthState {
-  user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
+    user: User | null;
+    accessToken: string | null;
+    refreshToken: string | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
 
-  isAuthenticated: boolean;
-  isLoading: boolean;
-
-  signIn: (
-    accessToken: string,
-    refreshToken: string,
-    user: User
-  ) => void;
-
-  signOut: () => void;
-
-  updateTokens: (
-    accessToken: string,
-    refreshToken: string
-  ) => void;
-
-  hydrate: () => Promise<void>;
+    signIn: (accessToken: string, refreshToken: string, user: User) => Promise<void>;
+    signOut: () => Promise<void>;
+    /** Called by the Axios interceptor after a successful token refresh. */
+    updateTokens: (accessToken: string, refreshToken: string) => void;
+    hydrate: () => Promise<void>;
 }
 
-type PersistedAuthState = Pick<
-  AuthState,
-  'user' | 'accessToken' | 'refreshToken'
->;
-
-// ---------------------------------------------
-// 2. Secure Storage Adapter
-// ---------------------------------------------
-
 const secureStoreStorage: StateStorage = {
-  getItem: async (key) => {
-    return await SecureStore.getItemAsync(key);
-  },
-
-  setItem: async (key, value) => {
-    await SecureStore.setItemAsync(key, value);
-  },
-
-  removeItem: async (key) => {
-    await SecureStore.deleteItemAsync(key);
-  },
+    getItem: async (name) => {
+        const value = await SecureStore.getItemAsync(name);
+        return value ?? null;
+    },
+    setItem: async (name, value) => {
+        await SecureStore.setItemAsync(name, value);
+    },
+    removeItem: async (name) => {
+        await SecureStore.deleteItemAsync(name);
+    },
 };
 
-// ---------------------------------------------
-// 3. Auth Store
-// ---------------------------------------------
-
 export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      // Initial state
-      user: null,
-      accessToken: null,
-      refreshToken: null,
-
-      isAuthenticated: false,
-      isLoading: true,
-
-      // -----------------------------------------
-      // Sign In
-      // -----------------------------------------
-
-      signIn: (accessToken, refreshToken, user) => {
-        set({
-          accessToken,
-          refreshToken,
-          user,
-          isAuthenticated: true,
-        });
-      },
-
-      // -----------------------------------------
-      // Sign Out
-      // -----------------------------------------
-
-      signOut: () => {
-        set({
-          user: null,
-          accessToken: null,
-          refreshToken: null,
-          isAuthenticated: false,
-        });
-      },
-
-      // -----------------------------------------
-      // Update Tokens
-      // -----------------------------------------
-
-      updateTokens: (accessToken, refreshToken) => {
-        set({
-          accessToken,
-          refreshToken,
-          isAuthenticated: true,
-        });
-      },
-
-      // -----------------------------------------
-      // Hydrate Store
-      // -----------------------------------------
-
-      hydrate: async () => {
-        try {
-          set({ isLoading: true });
-
-          await useAuthStore.persist.rehydrate();
-        } catch (error) {
-          console.error('Auth hydration failed:', error);
-
-          set({
+    persist(
+        (set, get) => ({
             user: null,
             accessToken: null,
             refreshToken: null,
             isAuthenticated: false,
-            isLoading: false,
-          });
+            isLoading: true,
+
+            signIn: async (accessToken, refreshToken, user) => {
+                set({ accessToken, refreshToken, user, isAuthenticated: true, isLoading: false });
+            },
+
+            signOut: async () => {
+                set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false, isLoading: false });
+            },
+
+            updateTokens: (accessToken, refreshToken) => {
+                set({ accessToken, refreshToken });
+            },
+
+            hydrate: async () => {
+                try {
+                    set({ isLoading: true });
+                    await useAuthStore.persist.rehydrate();
+                    const accessToken = get().accessToken;
+                    set({ isAuthenticated: !!accessToken, isLoading: false });
+                } catch (error) {
+                    console.error('Failed to hydrate auth state:', error);
+                    set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false, isLoading: false });
+                }
+            },
+        }),
+        {
+            name: 'auth-storage',
+            storage: createJSONStorage(() => secureStoreStorage),
+            partialize: (state) => ({
+                user: state.user,
+                accessToken: state.accessToken,
+                refreshToken: state.refreshToken,
+            }),
+            onRehydrateStorage: () => (state, error) => {
+                if (error) {
+                    console.error('Failed to rehydrate auth store:', error);
+                    useAuthStore.setState({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false, isLoading: false });
+                    return;
+                }
+                useAuthStore.setState({
+                    isAuthenticated: !!state?.accessToken,
+                    isLoading: false,
+                });
+            },
+            version: 2,
+            migrate: async (persistedState: any) => {
+                // Migrate from v1 (single `token` field) to v2 (`accessToken` + `refreshToken`)
+                if (persistedState?.token && !persistedState?.accessToken) {
+                    return {
+                        ...persistedState,
+                        accessToken: persistedState.token,
+                        refreshToken: null,
+                        token: undefined,
+                    } as AuthState;
+                }
+                return persistedState as AuthState;
+            },
         }
-      },
-    }),
-
-    // -------------------------------------------
-    // Persistence Configuration
-    // -------------------------------------------
-
-    {
-      name: 'auth-storage',
-
-      storage: createJSONStorage<PersistedAuthState>(
-        () => secureStoreStorage
-      ),
-
-      // Persist only authentication data
-      partialize: (state) => ({
-        user: state.user,
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
-      }),
-
-      // Current storage version
-      version: 2,
-
-      // Manually hydrate during application startup
-      skipHydration: true,
-
-      // Handle hydration completion and errors
-      onRehydrateStorage: () => (state, error) => {
-        if (error) {
-          console.error('Failed to rehydrate auth store:', error);
-
-          useAuthStore.setState({
-            user: null,
-            accessToken: null,
-            refreshToken: null,
-            isAuthenticated: false,
-            isLoading: false,
-          });
-
-          return;
-        }
-
-        useAuthStore.setState({
-          isAuthenticated: Boolean(state?.accessToken),
-          isLoading: false,
-        });
-      },
-    }
-  )
+    )
 );

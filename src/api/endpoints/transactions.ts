@@ -1,50 +1,82 @@
 import client from '../client';
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
+import { ApiResponse } from './auth';
 
 export interface TransactionCategory {
   id: string;
   name: string;
-  color?: string;
+  type: string;
+  color?: string | null;
+  icon?: string | null;
+}
+
+export interface TransactionBudget {
+  id: string;
+  userId: string;
+  categoryId: string;
+  name: string;
+  amount: string | number;
+  currency: string;
+  period: string;
+  startDate: string;
+  endDate: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TransactionReceipt {
+  id: string;
+  userId: string;
+  storeName: string | null;
+  receiptDate: string;
+  totalAmount: string | number;
+  tax: string | number | null;
+  imageUrl: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TransactionReceiptItem {
+  id: string;
+  receiptId: string;
+  name: string;
+  quantity: number;
+  price: string | number;
+  totalPrice: string | number;
+  createdAt: string;
+  updatedAt: string;
+  receipt?: TransactionReceipt;
 }
 
 export interface Transaction {
   id: string;
-  amount: number;
+  userId: string;
+  budgetId: string | null;
+  categoryId: string;
+  receiptItemId: string | null;
   type: 'expense' | 'income';
-  description: string;
+  amount: string | number;
+  description: string | null;
   date: string;
+  createdAt: string;
+  updatedAt: string;
   category?: TransactionCategory;
-  receiptId?: string;
-  receiptItem?: unknown;
+  budget?: TransactionBudget | null;
+  receiptItem?: TransactionReceiptItem | null;
 }
 
 export interface TransactionFilters {
   categoryId?: string;
+  budgetId?: string;
+  type?: string;
   startDate?: string;
   endDate?: string;
-}
-
-export interface CreateTransactionInput {
-  amount: number;
-  type: 'expense' | 'income';
-  description: string;
-  categoryId: string;
-  date?: string;
 }
 
 export const transactionApi = {
   getTransactions: async (filters: TransactionFilters = {}): Promise<Transaction[]> => {
     const response = await client.get<ApiResponse<Transaction[]>>('/transactions', { params: filters });
-    return response.data.data;
-  },
-
-  createTransaction: async (data: CreateTransactionInput): Promise<Transaction> => {
-    const response = await client.post<ApiResponse<Transaction>>('/transactions', data);
     return response.data.data;
   },
 };

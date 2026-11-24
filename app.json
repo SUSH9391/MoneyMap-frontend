@@ -17,7 +17,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.MoneyMap"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,6 +31,16 @@
       "expo-secure-store",
       "expo-image",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "6724cd99-153b-49a1-81f4-6f9be45fd1f8"
+      }
+    }
   }
 }

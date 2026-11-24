@@ -1,38 +1,63 @@
 import client from '../client';
+import { ApiResponse } from './auth';
 
-export interface Budget {
-  id: string;
-  name: string;
-  amount: number;
-  period: 'monthly' | 'weekly' | 'yearly';
-  progress: {
+export interface BudgetCategory {
+    id: string;
+    name: string;
+    type: string;
+    color: string | null;
+    icon: string | null;
+    isDefault: boolean;
+}
+
+export interface BudgetProgress {
     spent: number;
     remaining: number;
     percentage: number;
-  };
-  category: {
-    id: string;
-    name: string;
-    color?: string;
-  };
+    isOverBudget: boolean;
+    isNearLimit: boolean;
 }
 
-export interface CreateBudgetInput {
-  name: string;
-  amount: number;
-  categoryId: string;
-  period: 'monthly' | 'weekly' | 'yearly';
-  startDate: string;
+export interface Budget {
+    id: string;
+    userId: string;
+    categoryId: string;
+    name: string;
+    amount: number;
+    currency: string;
+    period: string;
+    startDate: string;
+    endDate: string | null;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    category: BudgetCategory;
+    progress: BudgetProgress;
+}
+
+export interface CreateBudgetRequest {
+    categoryId: string;
+    name: string;
+    amount: number;
+    currency?: string;
+    period: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    startDate: string;
+    endDate?: string;
 }
 
 export const budgetApi = {
-  getBudgets: async (): Promise<Budget[]> => {
-    const res = await client.get('/budgets');
-    return res.data.data;
-  },
+    getBudgets: async (): Promise<Budget[]> => {
+        const response = await client.get<ApiResponse<Budget[]>>('/budgets');
+        return response.data.data;
+    },
 
-  createBudget: async (input: CreateBudgetInput): Promise<Budget> => {
-    const res = await client.post('/budgets', input);
-    return res.data.data;
-  },
+    getBudget: async (id: string): Promise<Budget> => {
+        const response = await client.get<ApiResponse<Budget>>(`/budgets/${id}`);
+        return response.data.data;
+    },
+
+    createBudget: async (data: CreateBudgetRequest): Promise<Budget> => {
+        const response = await client.post<ApiResponse<Budget>>('/budgets', data);
+        return response.data.data;
+    },
 };

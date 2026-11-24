@@ -1,132 +1,108 @@
-// app/(tabs)/transactions.tsx
-import React, { useState, useMemo } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper } from '../../src/components/ui/ScreenWrapper';
-import { Card } from '../../src/components/ui/Card';
-import { Badge } from '../../src/components/ui/Badge';
-import { useTransactions } from '../../src/hooks/useTransactions';
-
-type FilterType = 'all' | 'income' | 'expense' | 'receipts';
+import { useState, useEffect } from "react";
+import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ThemedView } from "@/components/ui/themed-view";
+import { useTransactions } from "@/hooks/useTransactions";
+import { getFloatingTabContentPaddingBottom } from "@/constants/layout";
+import { useFilteredTransactions, FilterState, FilterType, FilterSource } from "@/hooks/useFilteredTransactions";
+import { useCategories } from "@/hooks/useCategories";
+import { useTransactionSections } from "@/hooks/useTransactionSections";
+import { TransactionsHeader } from "@/components/transactions/TransactionsHeader";
+import { SearchBar } from "@/components/transactions/SearchBar";
+import { TransactionFilters } from "@/components/transactions/TransactionFilters";
+import { TransactionList } from "@/components/transactions/TransactionList";
+import { FilterModal } from "@/components/transactions/FilterModal";
+import { useLocalSearchParams } from "expo-router";
 
 export default function TransactionsScreen() {
-  const { data: transactions = [], isLoading } = useTransactions();
-  const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState<FilterType>('all');
+  const insets = useSafeAreaInsets();
+  const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
 
-  // Multi-factor Filter: Search string + Inflow/Outflow/Receipt-only
-  const filtered = useMemo(() => {
-    return transactions.filter((t) => {
-      // 1. Search Query
-      const matchesSearch =
-        t.description.toLowerCase().includes(search.toLowerCase()) ||
-        t.category?.name?.toLowerCase().includes(search.toLowerCase());
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    types: [],
+    sources: [],
+    categoryIds: categoryId ? [categoryId] : [],
+    dateRange: { start: null, end: null },
+  });
 
-      if (!matchesSearch) return false;
+  // Update filter if categoryId param changes (e.g. navigating from categories)
+  useEffect(() => {
+    if (categoryId) {
+      setFilters(prev => ({ ...prev, categoryIds: [categoryId] }));
+    }
+  }, [categoryId]);
+  const [search, setSearch] = useState("");
+  const { data: transactions = [], isLoading, error } = useTransactions();
+  const { data: categories = [] } = useCategories();
+  const contentPaddingBottom = getFloatingTabContentPaddingBottom(
+    insets.bottom,
+  );
 
-      // 2. Type & Source filter
-      if (filterType === 'income') return t.type === 'income';
-      if (filterType === 'expense') return t.type === 'expense';
-      if (filterType === 'receipts') return Boolean((t as any).receiptItem || (t as any).receiptId);
+  const hasActiveFilters = filters.types.length > 0 || filters.sources.length > 0 || filters.categoryIds.length > 0 || !!filters.dateRange.start || !!filters.dateRange.end;
 
-      return true;
+  const toggleFilter = <T extends "types" | "sources" | "categoryIds">(
+    key: T,
+    value: T extends "types" ? FilterType : T extends "sources" ? FilterSource : string
+  ) => {
+    setFilters((prev) => {
+      const current = prev[key] as string[];
+      const exists = current.includes(value as string);
+      if (exists) {
+        return { ...prev, [key]: current.filter((v) => v !== value) };
+      }
+      return { ...prev, [key]: [...current, value] };
     });
-  }, [transactions, search, filterType]);
+  };
+
+  const setDateRange = (start: string | null, end: string | null) => {
+    setFilters(prev => ({
+      ...prev,
+      dateRange: { start, end }
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({ types: [], sources: [], categoryIds: [], dateRange: { start: null, end: null } });
+  };
+
+  const filteredTransactions = useFilteredTransactions(transactions, filters, search);
+  const sections = useTransactionSections(filteredTransactions, filters);
 
   return (
-    <ScreenWrapper>
-      <View className="py-6 flex-1 gap-y-4">
-        <Text className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Transactions</Text>
+    <ThemedView style={{ flex: 1, paddingTop: insets.top }}>
+      <TransactionsHeader
+        onFilterPress={() => setShowFilterModal(true)}
+        hasActiveFilters={hasActiveFilters}
+      />
 
-        {/* Search Bar */}
-        <View className="flex-row items-center px-3.5 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
-          <Ionicons name="search" size={18} color="#A1A1AA" />
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search merchant, category..."
-            placeholderTextColor="#A1A1AA"
-            className="flex-1 ml-2 text-base text-zinc-900 dark:text-zinc-100"
-          />
-        </View>
+      <SearchBar
+        value={search}
+        onChangeText={setSearch}
+      />
 
-        {/* Filter Pills */}
-        <View className="flex-row gap-x-2">
-          {(['all', 'expense', 'income', 'receipts'] as FilterType[]).map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              onPress={() => setFilterType(tab)}
-              className={`px-3.5 py-1.5 rounded-full border ${
-                filterType === tab
-                  ? 'bg-brand-500 border-brand-500'
-                  : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'
-              }`}
-            >
-              <Text
-                className={`text-xs font-semibold capitalize ${
-                  filterType === tab ? 'text-white' : 'text-zinc-600 dark:text-zinc-300'
-                }`}
-              >
-                {tab === 'receipts' ? '🧾 Receipts' : tab}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      <TransactionFilters
+        filters={filters}
+        onToggleFilter={toggleFilter}
+        categories={categories}
+      />
 
-        {/* Transactions List */}
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={() => (
-            <Card className="items-center py-8">
-              <Text className="text-zinc-400">No matching transactions found.</Text>
-            </Card>
-          )}
-          renderItem={({ item }) => {
-            const isReceipt = Boolean((item as any).receiptItem || (item as any).receiptId);
-            const isIncome = item.type === 'income';
+      <TransactionList
+        sections={sections}
+        isLoading={isLoading}
+        error={error}
+        contentPaddingBottom={contentPaddingBottom}
+      />
 
-            return (
-              <Card className="mb-2.5 flex-row items-center justify-between">
-                <View className="flex-row items-center gap-x-3 flex-1 mr-3">
-                  <View
-                    className="w-10 h-10 rounded-xl items-center justify-center"
-                    style={{ backgroundColor: item.category?.color ? `${item.category.color}20` : '#F4F4F5' }}
-                  >
-                    <Ionicons
-                      name={isReceipt ? 'receipt-outline' : 'card-outline'}
-                      size={20}
-                      color={item.category?.color || '#7C6FF7'}
-                    />
-                  </View>
-
-                  <View className="flex-1">
-                    <View className="flex-row items-center gap-x-1.5">
-                      <Text className="text-base font-semibold text-zinc-900 dark:text-zinc-100" numberOfLines={1}>
-                        {item.description}
-                      </Text>
-                      {isReceipt && <Badge label="OCR" variant="brand" className="px-1.5 py-0" />}
-                    </View>
-                    <Text className="text-xs text-zinc-400">
-                      {item.category?.name || 'General'} • {new Date(item.date).toLocaleDateString()}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Amount */}
-                <Text
-                  className={`text-base font-bold ${
-                    isIncome ? 'text-emerald-600' : 'text-zinc-900 dark:text-zinc-100'
-                  }`}
-                >
-                  {isIncome ? '+' : '-'}${Math.abs(Number(item.amount)).toFixed(2)}
-                </Text>
-              </Card>
-            );
-          }}
-        />
-      </View>
-    </ScreenWrapper>
+      <FilterModal
+        visible={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        filters={filters}
+        onToggleFilter={toggleFilter}
+        onDateRangeChange={setDateRange}
+        onClearFilters={clearFilters}
+        categories={categories}
+      />
+    </ThemedView>
   );
 }
