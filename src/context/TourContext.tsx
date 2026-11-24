@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef } from 'react';
-import { View, ViewStyle } from 'react-native';
+import { View } from 'react-native';
+import type { HostInstance, ViewStyle } from 'react-native';
 
 type MeasureResult = { x: number; y: number; width: number; height: number };
 
@@ -47,7 +48,7 @@ interface TourTargetProps {
 }
 
 export function TourTarget({ id, children, style }: TourTargetProps) {
-  const ref = useRef<View>(null);
+  const ref = useRef<HostInstance | null>(null);
   const { registerTarget } = useTourContext();
 
   useEffect(() => {

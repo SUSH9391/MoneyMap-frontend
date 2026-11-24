@@ -1,5 +1,5 @@
-import { useSettingsStore } from '../store/settingsStore';
-import { formatAmount } from '../utils/format';
+import { useSettingsStore } from '@/store/settingsStore';
+import { formatAmount } from '@/utils/format';
 
 export const useAppCurrency = () => {
     const currency = useSettingsStore((s) => s.currency);
@@ -10,3 +10,4 @@ export const useAppCurrency = () => {
         format: (value: string | number) => formatAmount(value, currency.symbol),
     };
 };
+    
