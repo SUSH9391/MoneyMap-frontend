@@ -59,7 +59,7 @@ export default function AppSplashScreen() {
     <View className="flex-1 items-center justify-center bg-[#0b0b0c]">
       <Animated.View className="items-center gap-6" style={animatedStyle}>
         <Image
-          source={require('../src/assets/images/android-icon-foreground.png')}
+          source={require('../src/assets/images/splash-logo.png')}
           style={{ width: 140, height: 140 }}
           resizeMode="contain"
         />

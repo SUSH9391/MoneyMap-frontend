@@ -16,7 +16,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors, zinc, brand, semantic } from "@/constants/theme";
 import { hexToRgba } from "@/utils/format";
-import { useUserSearch, useFollow, useUnfollow } from "@/hooks/useUsers";
+import { useUserSearch, useFollow, useUnfollow } from "@/hooks/useUser";
 import { PublicUser } from "@/api/endpoints/users";
 
 function userDisplayName(user: PublicUser) {

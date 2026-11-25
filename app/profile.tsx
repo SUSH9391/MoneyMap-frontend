@@ -11,7 +11,7 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/authStore';
-import { useFollowers, useFollowing, useUpdateProfile, useUploadAvatar, useDeleteAvatar } from '@/hooks/useUsers';
+import { useFollowers, useFollowing, useUpdateProfile, useUploadAvatar, useDeleteAvatar } from '@/hooks/useUser';
 import { Colors, zinc, brand, Typography } from '@/constants/theme';
 import { useState } from 'react';
 

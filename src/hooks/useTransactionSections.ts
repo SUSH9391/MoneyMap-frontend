@@ -1,7 +1,7 @@
 
 import { useMemo } from "react";
 import { Transaction } from "@/api/endpoints/transactions";
-import type { FilterState } from "@/hooks/useFilteredTransaction";
+import type { FilterState } from "@/hooks/useFilteredTransactions";
 import { toTimestamp, getAmountNumber } from "@/utils/format";
 
 type ReceiptGroup = {
