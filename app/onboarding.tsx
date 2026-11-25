@@ -1,14 +1,12 @@
 import React, { useCallback, useRef, useState } from 'react';
 import {
-    Button,
     Dimensions,
     FlatList,
-    Image,
     Pressable,
     Text,
     View,
-    ViewToken,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Animated, {
@@ -102,7 +100,7 @@ export default function OnboardingScreen() {
     };
 
     const onViewableItemsChanged = useCallback(
-        ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+        ({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
             if (viewableItems.length > 0 && viewableItems[0].index !== null) {
                 setCurrentIndex(viewableItems[0].index);
             }
@@ -127,6 +125,10 @@ export default function OnboardingScreen() {
                 bounces={false}
                 onViewableItemsChanged={onViewableItemsChanged}
                 viewabilityConfig={viewabilityConfig}
+                initialNumToRender={1}
+                maxToRenderPerBatch={1}
+                windowSize={2}
+                removeClippedSubviews
                 style={{ flex: 1 }}
                 renderItem={({ item }) => (
                     <View style={{ width }}>
@@ -141,7 +143,7 @@ export default function OnboardingScreen() {
                             <Image
                                 source={item.image}
                                 style={{ width: '100%', height: '100%' }}
-                                resizeMode="cover"
+                                contentFit="cover"
                             />
                         </View>
 

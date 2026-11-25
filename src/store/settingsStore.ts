@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import * as SecureStore from 'expo-secure-store';
+import { secureStoreStorage } from './secureStorage';
 
 export interface CurrencyOption {
     code: string;
@@ -22,19 +22,6 @@ interface SettingsState {
     currency: CurrencyOption;
     setCurrency: (currency: CurrencyOption) => void;
 }
-
-const secureStoreStorage = {
-    getItem: async (name: string) => {
-        const value = await SecureStore.getItemAsync(name);
-        return value ?? null;
-    },
-    setItem: async (name: string, value: string) => {
-        await SecureStore.setItemAsync(name, value);
-    },
-    removeItem: async (name: string) => {
-        await SecureStore.deleteItemAsync(name);
-    },
-};
 
 export const useSettingsStore = create<SettingsState>()(
     persist(

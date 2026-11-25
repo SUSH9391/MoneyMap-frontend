@@ -14,11 +14,12 @@ export function FirstBudgetPrompt() {
     const isDark = colorScheme === 'dark';
     const colors = isDark ? Colors.dark : Colors.light;
 
+    const onboardingHydrated = useOnboardingStore((s) => s._hasHydrated);
     const screensTourDone = useOnboardingStore((s) => s.screensTourDone);
     const firstBudgetPromptDone = useOnboardingStore((s) => s.firstBudgetPromptDone);
     const completeFirstBudgetPrompt = useOnboardingStore((s) => s.completeFirstBudgetPrompt);
 
-    const visible = screensTourDone && !firstBudgetPromptDone;
+    const visible = onboardingHydrated && screensTourDone && !firstBudgetPromptDone;
 
     const handleCreate = () => {
         completeFirstBudgetPrompt();

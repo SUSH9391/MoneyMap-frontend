@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Pressable, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useSegments } from 'expo-router';
 import { ThemedText } from '@/components/ui/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors, Typography, brand, zinc } from '@/constants/theme';
+import { useAuthStore } from '@/store/authStore';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { useTourContext } from '@/context/TourContext';
 
@@ -51,13 +52,24 @@ type Rect = { x: number; y: number; width: number; height: number };
 
 export function ProductTour() {
   const router = useRouter();
+  const segments = useSegments();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = isDark ? Colors.dark : Colors.light;
   const { measureTarget } = useTourContext();
 
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const onboardingHydrated = useOnboardingStore((s) => s._hasHydrated);
+  const onboardingDone = useOnboardingStore((s) => s.onboardingDone);
   const tourDone = useOnboardingStore((s) => s.screensTourDone);
   const completeTour = useOnboardingStore((s) => s.completeScreensTour);
+
+  const canRunTour =
+    isAuthenticated &&
+    onboardingHydrated &&
+    onboardingDone &&
+    !tourDone &&
+    segments[0] === '(tabs)';
 
   const [step, setStep] = useState(0);
   const [spotlight, setSpotlight] = useState<Rect | null>(null);
@@ -65,16 +77,16 @@ export function ProductTour() {
 
   // Reset to step 0 whenever tour is re-enabled (e.g. dev reset)
   useEffect(() => {
-    if (!tourDone) {
+    if (canRunTour) {
       setStep(0);
       setSpotlight(null);
       fadeAnim.setValue(0);
     }
-  }, [tourDone]);
+  }, [canRunTour]);
 
   // Navigate + measure on each step change
   useEffect(() => {
-    if (tourDone) return;
+    if (!canRunTour) return;
 
     fadeAnim.setValue(0);
     setSpotlight(null);
@@ -91,9 +103,9 @@ export function ProductTour() {
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [step, tourDone]);
+  }, [step, canRunTour]);
 
-  if (tourDone) return null;
+  if (!canRunTour) return null;
 
   const current = STEPS[step];
   const isLast = step === STEPS.length - 1;
@@ -122,7 +134,7 @@ export function ProductTour() {
 
   return (
     <Animated.View
-      style={[StyleSheet.absoluteFillObject, { zIndex: 999, elevation: 999, opacity: fadeAnim }]}
+      style={[StyleSheet.absoluteFill, { zIndex: 999, elevation: 999, opacity: fadeAnim }]}
       pointerEvents="box-none"
     >
       {/* ── Spotlight overlay (4 dark sections + transparent blocker) ── */}
@@ -150,7 +162,7 @@ export function ProductTour() {
           />
         </>
       ) : (
-        <View style={[StyleSheet.absoluteFillObject, styles.overlay]} />
+        <View style={[StyleSheet.absoluteFill, styles.overlay]} />
       )}
 
       {/* ── Center card (floats in space above spotlight) ── */}

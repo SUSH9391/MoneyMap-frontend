@@ -2,7 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useColorScheme as useNWColorScheme } from 'nativewind';
 import '../src/global.css';
 import 'react-native-reanimated';
@@ -23,10 +23,18 @@ function ThemeSync() {
   const preference = useThemeStore((s) => s.preference);
   const hasHydrated = useThemeStore((s) => s._hasHydrated);
   const { setColorScheme } = useNWColorScheme();
+  const setColorSchemeRef = useRef(setColorScheme);
+  const hasSyncedCustomTheme = useRef(false);
+
+  useEffect(() => {
+    setColorSchemeRef.current = setColorScheme;
+  }, [setColorScheme]);
 
   useEffect(() => {
     if (!hasHydrated) return;
-    setColorScheme(preference);
+    if (preference === 'system' && !hasSyncedCustomTheme.current) return;
+    hasSyncedCustomTheme.current = preference !== 'system';
+    setColorSchemeRef.current(preference);
   }, [preference, hasHydrated]);
 
   return null;

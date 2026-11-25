@@ -46,6 +46,7 @@ export function SettingsTour() {
     const colors = isDark ? Colors.dark : Colors.light;
     const { measureTarget } = useTourContext();
 
+    const onboardingHydrated = useOnboardingStore((s) => s._hasHydrated);
     const scanTourDone = useOnboardingStore((s) => s.scanTourDone);
     const settingsTourDone = useOnboardingStore((s) => s.settingsTourDone);
     const completeSettingsTour = useOnboardingStore((s) => s.completeSettingsTour);
@@ -54,7 +55,7 @@ export function SettingsTour() {
     const [spotlight, setSpotlight] = useState<Rect | null>(null);
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
-    const visible = scanTourDone && !settingsTourDone;
+    const visible = onboardingHydrated && scanTourDone && !settingsTourDone;
 
     // Reset step when tour becomes visible again (dev reset)
     useEffect(() => {
@@ -114,7 +115,7 @@ export function SettingsTour() {
 
     return (
         <Animated.View
-            style={[StyleSheet.absoluteFillObject, { zIndex: 999, elevation: 999, opacity: fadeAnim }]}
+            style={[StyleSheet.absoluteFill, { zIndex: 999, elevation: 999, opacity: fadeAnim }]}
             pointerEvents="box-none"
         >
             {/* ── Spotlight overlay ── */}
@@ -136,7 +137,7 @@ export function SettingsTour() {
                     />
                 </>
             ) : (
-                <View style={[StyleSheet.absoluteFillObject, styles.overlay]} />
+                <View style={[StyleSheet.absoluteFill, styles.overlay]} />
             )}
 
             {/* ── Floating card ── */}
